@@ -68,72 +68,7 @@ class SimpleWRVUCalculator:
         except Exception as e:
             print(f"ERROR loading CSV database: {e}")
             print("Please check that procedure_database.csv exists and is properly formatted.")
-            sys.exit(1) ONLY": {"cpt": "72040", "wrvu": 0.22},
-            "XR C-SPINE 2 OR 3 VIEWS": {"cpt": "72040", "wrvu": 0.22},
-            "XR THORACIC SPINE 2 VIEWS": {"cpt": "72070", "wrvu": 0.22},
-            "XR SHOULDER MINIMUM 2 VIEWS": {"cpt": "73030", "wrvu": 0.22},
-            "XR SHOULDER MINIMUM 2 VIEWS RIGHT": {"cpt": "73030", "wrvu": 0.22},
-            "XR SHOULDER MINIMUM 2 VIEWS LEFT": {"cpt": "73030", "wrvu": 0.22},
-            "XR KNEE MINIMUM 2 VIEWS": {"cpt": "73560", "wrvu": 0.22},
-            "XR KNEE 2 VIEWS LEFT": {"cpt": "73560", "wrvu": 0.22},
-            "XR KNEE 2 VIEWS RIGHT": {"cpt": "73560", "wrvu": 0.22},
-            "XR KNEE 3 VIEWS RIGHT": {"cpt": "73560", "wrvu": 0.22},
-            "XR KNEE MINIMUM 4 VIEWS RIGHT": {"cpt": "73560", "wrvu": 0.22},
-            "XR FOOT MINIMUM 3 VIEWS LEFT": {"cpt": "73620", "wrvu": 0.22},
-            "XR FOOT MINIMUM 3 VIEWS RIGHT": {"cpt": "73620", "wrvu": 0.22},
-            "XR FOOT 2 VIEWS LEFT": {"cpt": "73620", "wrvu": 0.22},
-            "XR FOOT 2 VIEWS RIGHT": {"cpt": "73620", "wrvu": 0.22},
-            "XR ELBOW MINIMUM 3 VIEWS LEFT": {"cpt": "73070", "wrvu": 0.22},
-            "XR ELBOW MINIMUM 3 VIEWS RIGHT": {"cpt": "73070", "wrvu": 0.22},
-            "XR ELBOW 2 VIEWS RIGHT": {"cpt": "73070", "wrvu": 0.22},
-            "XR ELBOW 2 VIEWS LEFT": {"cpt": "73070", "wrvu": 0.22},
-            "XR PELVIS 1 OR 2 VIEWS": {"cpt": "72170", "wrvu": 0.22},
-            "XR FACIAL BONES 3 OR MORE VIEWS": {"cpt": "70140", "wrvu": 0.22},
-            "XR RIBS UNILAT LEFT AND PA CHEST MIN 3 VIEWS": {"cpt": "71100", "wrvu": 0.22},
-            "XR FEMUR 2 OR MORE VIEWS LEFT": {"cpt": "73550", "wrvu": 0.22},
-            "XR TOE 1ST LEFT": {"cpt": "73660", "wrvu": 0.22},
-            "XR HAND MINIMUM 3 VIEWS RIGHT": {"cpt": "73120", "wrvu": 0.22},
-            "XR FOREARM 2 VIEWS RIGHT": {"cpt": "73090", "wrvu": 0.22},
-            "XR WRIST MINIMUM 3 VIEWS LEFT": {"cpt": "73110", "wrvu": 0.22},
-            "XR WRIST MINIMUM 3 VIEWS RIGHT": {"cpt": "73110", "wrvu": 0.22},
-            
-            # PET procedures
-            "PET CT SKULL BASE TO MID THIGH INIT": {"cpt": "78815", "wrvu": 4.8},
-            "PET CT SKULL BASE TO MID THIGH SUBSEQUENT": {"cpt": "78815", "wrvu": 4.8},
-            
-            # Fluoroscopy procedures
-            "FL GUIDANCE VENOUS ACCESS": {"cpt": "77001", "wrvu": 0.25},
-            "FL ESOPHAGRAM COMPLETE": {"cpt": "74220", "wrvu": 0.85},
-            "FL ESOPHAGRAM SINGLE CONTRAST": {"cpt": "74220", "wrvu": 0.85},
-            "FL UPPER GI WITH SMALL BOWEL FOLLOW THROUGH": {"cpt": "74245", "wrvu": 1.25},
-            "FL RETROGRADE PYELOGRAM WITH AND WITHOUT KUB": {"cpt": "74420", "wrvu": 1.0},
-            "FL SWALLOW STUDY FOR SPEECH": {"cpt": "74230", "wrvu": 0.85},
-            "FLUORO GUIDANCE VENOUS ACCESS": {"cpt": "77001", "wrvu": 0.25},
-            "FLUORO ESOPHAGRAM COMPLETE": {"cpt": "74220", "wrvu": 0.85},
-            "FLUOROSCOPY GUIDED SPINAL INJECTION": {"cpt": "77003", "wrvu": 0.67},
-            
-            # Nuclear Medicine procedures
-            "NM BONE SCAN 3 PHASE": {"cpt": "78320", "wrvu": 0.96},
-            "NM LUNG SCAN VENTILATION AND PERFUSION IMAGING": {"cpt": "78588", "wrvu": 1.4},
-            "NM LIVER SCAN STATIC ONLY": {"cpt": "78215", "wrvu": 0.74},
-            "NM GASTRIC EMPTYING STUDY": {"cpt": "78264", "wrvu": 1.0},
-            "NM HIDA SCAN": {"cpt": "78226", "wrvu": 0.96},
-            
-            # Interventional Radiology procedures
-            "IR EMBOLIZATION ARTERIAL": {"cpt": "37204", "wrvu": 3.2},
-            "IR KYPHOPLASTY LUMBAR": {"cpt": "22523", "wrvu": 2.8},
-            
-            # Procedures
-            "THORACENTESIS": {"cpt": "32554", "wrvu": 1.2},
-            "PARACENTESIS": {"cpt": "49082", "wrvu": 1.0},
-            
-            # Bone density procedures
-            "DXA BONE DENSITY SPINE AND HIP": {"cpt": "77080", "wrvu": 0.17},
-            
-            # Mammography procedures
-            "MAMMO DIGITAL 3D SCREENING BILATERAL": {"cpt": "77067", "wrvu": 0.7},
-            "MAMMO DIGITAL 3D DIAGNOSTIC UNILATERAL LEFT": {"cpt": "77066", "wrvu": 0.7},
-        }
+            sys.exit(1)
     
     def setup_generic_values(self):
         """Generic wRVU values by modality"""
@@ -529,11 +464,11 @@ class WRVUCalculatorGUI:
         buttons_frame = ttk.Frame(main_frame)
         buttons_frame.pack(pady=(0, 20))
         
-        # Screenshot capture button
-        self.screenshot_btn = ttk.Button(buttons_frame, text="Capture Screenshot", 
-                                        command=self.capture_screenshot,
-                                        width=18)
-        self.screenshot_btn.pack(side=tk.LEFT, padx=(0, 10))
+        # Screenshot instructions
+        screenshot_label = ttk.Label(buttons_frame, 
+                                       text="📷 Windows + Shift + S → Select area → Save as file → Add Files",
+                                       font=("Arial", 9))
+        screenshot_label.pack(side=tk.LEFT, padx=(0, 15))
         
         # Add files button
         self.add_files_btn = ttk.Button(buttons_frame, text="Add Files", 
@@ -587,58 +522,6 @@ class WRVUCalculatorGUI:
         # Progress bar
         self.progress = ttk.Progressbar(main_frame, mode='indeterminate')
         self.progress.pack(fill=tk.X, pady=(10, 0))
-        
-    def capture_screenshot(self):
-        """Capture screenshot using system snipping tool"""
-        try:
-            # Launch appropriate screenshot tool based on OS
-            if sys.platform == "win32":
-                # Try new Snipping Tool first (Windows 10/11)
-                try:
-                    subprocess.run("ms-screenclip:", shell=True)
-                except:
-                    # Fallback to old Snipping Tool
-                    subprocess.run("snippingtool", shell=True)
-            elif sys.platform == "darwin":  # macOS
-                subprocess.run(["screencapture", "-i", "-c"])
-            else:  # Linux
-                try:
-                    subprocess.run(["gnome-screenshot", "-a", "-c"])
-                except:
-                    messagebox.showinfo("Screenshot", "Please take a screenshot and copy it to clipboard, then click OK")
-            
-            # Wait a moment for the screenshot to be taken
-            self.root.after(2000, self.check_clipboard)
-            
-        except Exception as e:
-            messagebox.showerror("Error", f"Could not launch screenshot tool: {e}")
-    
-    def check_clipboard(self):
-        """Check if there's an image in clipboard and save it"""
-        try:
-            # Try to get image from clipboard
-            img = ImageGrab.grabclipboard()
-            
-            if img is not None:
-                # Save the screenshot to temp directory
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                filename = f"screenshot_{timestamp}.png"
-                filepath = os.path.join(self.temp_dir, filename)
-                img.save(filepath)
-                
-                self.captured_images.append(filepath)
-                self.update_status()
-                
-                messagebox.showinfo("Success", f"Screenshot captured! ({len(self.captured_images)} total)")
-            else:
-                # No image in clipboard, ask user to try again
-                result = messagebox.askyesno("No Image", 
-                                           "No image found in clipboard. Try again?")
-                if result:
-                    self.root.after(2000, self.check_clipboard)
-                    
-        except Exception as e:
-            messagebox.showerror("Error", f"Could not capture screenshot: {e}")
     
     def add_files(self):
         """Add image files manually"""
