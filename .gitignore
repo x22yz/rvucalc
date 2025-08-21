@@ -1,0 +1,11 @@
+wrvu_env/
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+*.env
+env/
+venv/
+__marimo__/
+marimo/_static/
+marimo/_lsp/
