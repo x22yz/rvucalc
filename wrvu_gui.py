@@ -7,12 +7,14 @@ import re
 from datetime import datetime
 import warnings
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from tkinter import ttk, filedialog, messagebox, scrolledtext
 import threading
 import subprocess
 import tempfile
 import time
 from PIL import ImageGrab, Image
+import webbrowser
+import urllib.parse
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 try:
@@ -30,104 +32,43 @@ class SimpleWRVUCalculator:
         self.setup_generic_values()
         
     def setup_database(self):
-        """Setup 2024 wRVU database with all missing procedures added"""
-        self.procedure_db = {
-            # US procedures
-            "US VENOUS LOWER EXTREMITY DUPLEX BILATERAL": {"cpt": "93971", "wrvu": 0.7},
-            "US VENOUS LOWER EXTREMITY DUPLEX": {"cpt": "93970", "wrvu": 0.45},
-            "VASCULAR VEINS LOWER EXTREMITY DUPLEX": {"cpt": "93970", "wrvu": 0.45},
-            "US RENAL KIDNEY": {"cpt": "76770", "wrvu": 0.58},
-            "US RENAL": {"cpt": "76770", "wrvu": 0.58},
-            "US OB LESS THAN 14 WEEKS": {"cpt": "76815", "wrvu": 0.85},
-            "US OB GREATER THAN 14 WEEKS": {"cpt": "76805", "wrvu": 0.99},
-            "US OB LESS THAN 14 WEEKS TRANSABDOMINAL": {"cpt": "76815", "wrvu": 0.85},
-            "US OB GREATER THAN 14 WEEKS TRANSABDOMINAL": {"cpt": "76805", "wrvu": 0.99},
-            "US OB FOLLOW UP PER FETUS": {"cpt": "76815", "wrvu": 0.85},
-            "US NON OB TRANSVAGINAL": {"cpt": "76830", "wrvu": 0.69},
-            "US OB TRANSVAGINAL": {"cpt": "76830", "wrvu": 0.69},
-            "US PARACENTESIS": {"cpt": "76942", "wrvu": 0.67},
-            "US BIOPSY": {"cpt": "76942", "wrvu": 0.67},
-            "US LEG RT VENOUS": {"cpt": "93970", "wrvu": 0.45},
-            "US LEG LT VENOUS": {"cpt": "93970", "wrvu": 0.45},
-            "US ABDOMEN LIMITED": {"cpt": "76705", "wrvu": 0.59},
-            "US LIMITED ABDOMEN": {"cpt": "76705", "wrvu": 0.59},
-            "US COMPLETE ABDOMEN": {"cpt": "76700", "wrvu": 0.81},
-            "US THYROID PARATHYROID NECK": {"cpt": "76536", "wrvu": 0.56},
-            "US SCROTUM AND TESTICLES": {"cpt": "76870", "wrvu": 0.64},
-            "US RETROPERITONEAL LIMITED": {"cpt": "76770", "wrvu": 0.58},
-            "US RETROPERITONEAL COMPLETE": {"cpt": "76770", "wrvu": 0.58},
-            "US PELVIS COMPLETE": {"cpt": "76856", "wrvu": 0.69},
-            "US PELVIS COMPLETE AND US NON OB TRANSVAGINAL": {"cpt": "76856", "wrvu": 0.69},
-            "US BREAST BILATERAL LIMITED": {"cpt": "76641", "wrvu": 0.69},
+        """Load procedure database from CSV file"""
+        self.procedure_db = {}
+        
+        try:
+            import csv
+            csv_file = "procedure_database.csv"
             
-            # CT procedures
-            "CT ENTEROGRAPHY ABDOMEN AND PELVIS WITH CONTRAST": {"cpt": "74177", "wrvu": 1.82},
-            "CT ABDOMEN PELVIS WITH AND WITHOUT CONTRAST": {"cpt": "74178", "wrvu": 2.01},
-            "CT ABDOMEN PELVIS WITH CONTRAST": {"cpt": "74177", "wrvu": 1.82},
-            "CT ABDOMEN PELVIS WITHOUT CONTRAST": {"cpt": "74176", "wrvu": 1.74},
-            "CT PELVIS WITHOUT CONTRAST": {"cpt": "72192", "wrvu": 1.19},
-            "CT CHEST WITH CONTRAST": {"cpt": "71260", "wrvu": 1.24},
-            "CT CHEST WITHOUT CONTRAST": {"cpt": "71250", "wrvu": 1.02},
-            "CT CHEST HIGH RESOLUTION": {"cpt": "71250", "wrvu": 1.02},
-            "CT ANGIOGRAM CHEST PULMONARY EMBOLISM": {"cpt": "71275", "wrvu": 1.82},
-            "CT ANGIOGRAM CHEST ABDOMEN PELVIS": {"cpt": "74174", "wrvu": 2.2},
-            "CT ANGIOGRAM CHEST WITH AND OR WITHOUT CONTRAST": {"cpt": "71275", "wrvu": 1.82},
-            "CT ANGIOGRAM ABDOMINAL AORTA AND BILATERAL ILIOFEM": {"cpt": "74175", "wrvu": 1.82},
-            "CT ANGIOGRAM ABDOMEN WITH AND OR WITHOUT CONTRAST": {"cpt": "74174", "wrvu": 1.82},
-            "CT ANGIOGRAM HEAD WITH WO CONTRAST ACUTE STROKE": {"cpt": "70496", "wrvu": 1.75},
-            "CT ANGIOGRAM NECK WITH WO CONTRAST ACUTE STROKE": {"cpt": "70498", "wrvu": 1.75},
-            "CT HEAD WITHOUT CONTRAST": {"cpt": "70450", "wrvu": 0.85},
-            "CT HEAD WITHOUT CONTRAST ACUTE STROKE": {"cpt": "70450", "wrvu": 0.85},
-            "CT HEAD WITH AND WITHOUT CONTRAST": {"cpt": "70470", "wrvu": 1.27},
-            "CT LOWER EXTREMITY WITHOUT CONTRAST": {"cpt": "73700", "wrvu": 1.33},
-            "CT LOWER EXTREMITY WITHOUT CONTRAST LEFT": {"cpt": "73700", "wrvu": 1.33},
-            "CT UPPER EXTREMITY WITHOUT CONTRAST": {"cpt": "73200", "wrvu": 1.33},
-            "CT UPPER EXTREMITY WITHOUT CONTRAST RIGHT": {"cpt": "73200", "wrvu": 1.33},
-            "CT HEART CALCIUM SCORE WITHOUT CONTRAST": {"cpt": "75571", "wrvu": 0.58},
-            "CT ORBITS SELLA IAC WITHOUT CONTRAST": {"cpt": "70481", "wrvu": 1.13},
-            "CT ORBITS SELLA OR IAC WITHOUT CONTRAST": {"cpt": "70481", "wrvu": 1.13},
-            "CT MAXILLOFACIAL WITHOUT CONTRAST": {"cpt": "70486", "wrvu": 0.85},
-            "CT LUMBAR SPINE WITHOUT CONTRAST": {"cpt": "72131", "wrvu": 1.0},
-            "CT LUNG SCREEN PROTOCOL LOW DOSE INITIAL BASELINE": {"cpt": "71271", "wrvu": 1.02},
-            "CT C SPINE SPINE WO CON": {"cpt": "72125", "wrvu": 1.0},
-            "CT THORACIC SPINE WITHOUT CONTRAST": {"cpt": "72128", "wrvu": 1.0},
-            "CT SOFT TISSUE NECK WITH CONTRAST": {"cpt": "70491", "wrvu": 1.38},
+            if not os.path.exists(csv_file):
+                print(f"ERROR: {csv_file} not found!")
+                print("Please ensure procedure_database.csv is in the same directory as this script.")
+                sys.exit(1)
             
-            # MRI procedures
-            "MRI ABDOMEN WITH AND WITHOUT CONTRAST": {"cpt": "74183", "wrvu": 2.27},
-            "MRI BRAIN WITH AND WITHOUT CONTRAST": {"cpt": "70554", "wrvu": 2.29},
-            "MRI BRAIN WITHOUT CONTRAST": {"cpt": "70551", "wrvu": 1.48},
-            "MRI LUMBAR SPINE WITHOUT CONTRAST": {"cpt": "72148", "wrvu": 1.48},
-            "MRI LUMBAR SPINE WITH AND WITHOUT CONTRAST": {"cpt": "72158", "wrvu": 2.29},
-            "MRI CERVICAL SPINE WITH AND WITHOUT CONTRAST": {"cpt": "72156", "wrvu": 2.29},
-            "MRI CERVICAL SPINE WITHOUT CONTRAST": {"cpt": "72141", "wrvu": 1.48},
-            "MRI THORACIC SPINE WITH AND WITHOUT CONTRAST": {"cpt": "72157", "wrvu": 2.29},
-            "MRI PELVIS WITHOUT CONTRAST": {"cpt": "72195", "wrvu": 1.46},
-            "MRI ANGIOGRAM HEAD WITH AND WITHOUT CONTRAST": {"cpt": "70544", "wrvu": 1.48},
-            "MRI HIP WITH AND WITHOUT CONTRAST RIGHT": {"cpt": "73722", "wrvu": 2.29},
-            "MRI HIP WITH AND WITHOUT CONTRAST LEFT": {"cpt": "73722", "wrvu": 2.29},
-            "MRI BREAST WITH AND WITHOUT CONTRAST BILATERAL": {"cpt": "77059", "wrvu": 2.4},
-            "MRI SHOULDER WITH AND WITHOUT CONTRAST LEFT": {"cpt": "73223", "wrvu": 2.29},
-            "MRI MRCP WITH AND WITHOUT CONTRAST": {"cpt": "74183", "wrvu": 2.27},
-            "MRI ANKLE WITHOUT CONTRAST RIGHT": {"cpt": "73721", "wrvu": 1.48},
+            with open(csv_file, 'r', newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    # Handle potential column name variations
+                    name = row.get('name') or row.get('procedure_name') or row.get('Procedure Name')
+                    cpt = row.get('cpt') or row.get('CPT') or row.get('cpt_code') or row.get('CPT Code')
+                    wrvu = row.get('wrvu') or row.get('WRVU') or row.get('wRVU') or row.get('wRVU Value')
+                    
+                    if name and cpt and wrvu:
+                        self.procedure_db[name.upper().strip()] = {
+                            "cpt": str(cpt).strip(),
+                            "wrvu": float(wrvu)
+                        }
             
-            # X-ray procedures
-            "XR ANKLE MINIMUM 3 VIEWS": {"cpt": "73610", "wrvu": 0.22},
-            "XR ANKLE MINIMUM 3 VIEWS RIGHT": {"cpt": "73610", "wrvu": 0.22},
-            "XR ANKLE MINIMUM 3 VIEWS LEFT": {"cpt": "73610", "wrvu": 0.22},
-            "XR HIP 2 OR 3 VIEWS WITH OR WITHOUT PELVIS": {"cpt": "73521", "wrvu": 0.22},
-            "XR HIP 2 OR 3 VIEWS RIGHT WITH OR WITHOUT PELVIS": {"cpt": "73521", "wrvu": 0.22},
-            "XR HIP 2 VIEWS BILATERAL WITH OR WITHOUT PELVIS": {"cpt": "73521", "wrvu": 0.22},
-            "XR CHEST 1 VIEW": {"cpt": "71045", "wrvu": 0.18},
-            "XR CHEST 2 VIEWS": {"cpt": "71046", "wrvu": 0.22},
-            "XR ABDOMEN 1 VIEW": {"cpt": "74018", "wrvu": 0.18},
-            "XR ABDOMEN 2 VIEWS": {"cpt": "74019", "wrvu": 0.23},
-            "XR ABDOMEN 2 VIEWS COMPLETE": {"cpt": "74019", "wrvu": 0.23},
-            "XR LUMBAR SPINE 1 VIEW": {"cpt": "72100", "wrvu": 0.22},
-            "XR LUMBAR SPINE 2 OR 3 VIEWS": {"cpt": "72100", "wrvu": 0.22},
-            "XR LUMBAR SPINE MINIMUM 4 VIEWS": {"cpt": "72100", "wrvu": 0.22},
-            "XR CERVICAL SPINE 1 VIEW": {"cpt": "72040", "wrvu": 0.22},
-            "XR CERVICAL SPINE FLEXION AND EXTENSION VIEW ONLY": {"cpt": "72040", "wrvu": 0.22},
+            if len(self.procedure_db) == 0:
+                print("ERROR: No valid procedures found in CSV file!")
+                print("Please check the CSV format and column names.")
+                sys.exit(1)
+            
+            print(f"Loaded {len(self.procedure_db)} procedures from {csv_file}")
+                
+        except Exception as e:
+            print(f"ERROR loading CSV database: {e}")
+            print("Please check that procedure_database.csv exists and is properly formatted.")
+            sys.exit(1) ONLY": {"cpt": "72040", "wrvu": 0.22},
             "XR C-SPINE 2 OR 3 VIEWS": {"cpt": "72040", "wrvu": 0.22},
             "XR THORACIC SPINE 2 VIEWS": {"cpt": "72070", "wrvu": 0.22},
             "XR SHOULDER MINIMUM 2 VIEWS": {"cpt": "73030", "wrvu": 0.22},
@@ -438,6 +379,8 @@ class SimpleWRVUCalculator:
     def find_procedures_in_reconstructed_text(self, procedure_lines, source_file=""):
         """Find procedures in reconstructed text lines"""
         procedures = []
+        unmatched_lines = []
+        generic_lines = []
         
         for line_num, line in enumerate(procedure_lines, 1):
             if not line or len(line) < 5:
@@ -482,9 +425,14 @@ class SimpleWRVUCalculator:
                         'is_generic': True,
                         'source': source_file
                     })
+                    generic_lines.append(cleaned_line)
                     matched = True
+            
+            # Track unmatched lines for debugging
+            if not matched:
+                unmatched_lines.append(cleaned_line)
         
-        return procedures
+        return procedures, unmatched_lines, generic_lines
     
     def calculate_wrvus(self, procedures):
         """Calculate total wRVUs"""
@@ -531,7 +479,7 @@ class WRVUCalculatorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("wRVU Calculator")
-        self.root.geometry("600x400")
+        self.root.geometry("800x600")
         
         # Check dependencies first
         if not DEPENDENCIES_OK:
@@ -542,6 +490,7 @@ class WRVUCalculatorGUI:
         self.captured_images = []  # Store captured screenshots
         self.selected_files = []   # Store manually selected files
         self.temp_dir = tempfile.mkdtemp()  # Temp directory for screenshots
+        self.unmatched_procedures = []  # Store unmatched procedures for reporting
         
         self.create_widgets()
         
@@ -574,32 +523,32 @@ class WRVUCalculatorGUI:
         # Title
         title_label = ttk.Label(main_frame, text="wRVU Calculator", 
                                font=("Arial", 18, "bold"))
-        title_label.pack(pady=(0, 30))
+        title_label.pack(pady=(0, 20))
         
         # Buttons frame
         buttons_frame = ttk.Frame(main_frame)
-        buttons_frame.pack(pady=(0, 30))
+        buttons_frame.pack(pady=(0, 20))
         
         # Screenshot capture button
-        self.screenshot_btn = ttk.Button(buttons_frame, text="📷 Capture Screenshot", 
+        self.screenshot_btn = ttk.Button(buttons_frame, text="Capture Screenshot", 
                                         command=self.capture_screenshot,
-                                        width=20)
+                                        width=18)
         self.screenshot_btn.pack(side=tk.LEFT, padx=(0, 10))
         
         # Add files button
-        self.add_files_btn = ttk.Button(buttons_frame, text="📁 Add Files", 
+        self.add_files_btn = ttk.Button(buttons_frame, text="Add Files", 
                                        command=self.add_files,
-                                       width=15)
+                                       width=12)
         self.add_files_btn.pack(side=tk.LEFT, padx=(0, 10))
         
-        # Analyze button
-        self.analyze_btn = ttk.Button(buttons_frame, text="🔍 Analyze", 
-                                     command=self.analyze_images,
-                                     width=15)
-        self.analyze_btn.pack(side=tk.LEFT, padx=(0, 10))
+        # Calculate button
+        self.calculate_btn = ttk.Button(buttons_frame, text="Calculate", 
+                                       command=self.calculate_wrvus,
+                                       width=12)
+        self.calculate_btn.pack(side=tk.LEFT, padx=(0, 10))
         
         # Clear button
-        self.clear_btn = ttk.Button(buttons_frame, text="🗑️ Clear", 
+        self.clear_btn = ttk.Button(buttons_frame, text="Clear All", 
                                    command=self.clear_all,
                                    width=10)
         self.clear_btn.pack(side=tk.LEFT)
@@ -608,27 +557,41 @@ class WRVUCalculatorGUI:
         status_frame = ttk.LabelFrame(main_frame, text="Status", padding="10")
         status_frame.pack(fill=tk.X, pady=(0, 20))
         
-        self.status_label = ttk.Label(status_frame, text="Ready to capture screenshots or add files")
+        self.status_label = ttk.Label(status_frame, text="Ready - capture screenshots or add files")
         self.status_label.pack()
         
         # Results frame
         results_frame = ttk.LabelFrame(main_frame, text="Results", padding="20")
         results_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Large results display
-        self.results_label = ttk.Label(results_frame, text="No results yet", 
-                                      font=("Arial", 24, "bold"),
+        # Results display
+        self.results_label = ttk.Label(results_frame, text="No calculations yet", 
+                                      font=("Arial", 16, "bold"),
                                       anchor="center")
-        self.results_label.pack(expand=True)
+        self.results_label.pack(pady=(0, 20))
+        
+        # Unmatched procedures section
+        unmatched_frame = ttk.LabelFrame(results_frame, text="Unmatched Procedures (for debugging)", padding="10")
+        unmatched_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Scrolled text for unmatched procedures
+        self.unmatched_text = scrolledtext.ScrolledText(unmatched_frame, height=8, width=80, wrap=tk.WORD)
+        self.unmatched_text.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        
+        # Email button for unmatched procedures
+        self.email_btn = ttk.Button(unmatched_frame, text="Email Unmatched to Developers", 
+                                   command=self.email_unmatched,
+                                   state="disabled")
+        self.email_btn.pack()
         
         # Progress bar
         self.progress = ttk.Progressbar(main_frame, mode='indeterminate')
         self.progress.pack(fill=tk.X, pady=(10, 0))
         
     def capture_screenshot(self):
-        """Capture screenshot using Windows Snipping Tool"""
+        """Capture screenshot using system snipping tool"""
         try:
-            # Launch Windows Snipping Tool
+            # Launch appropriate screenshot tool based on OS
             if sys.platform == "win32":
                 # Try new Snipping Tool first (Windows 10/11)
                 try:
@@ -636,12 +599,16 @@ class WRVUCalculatorGUI:
                 except:
                     # Fallback to old Snipping Tool
                     subprocess.run("snippingtool", shell=True)
-            else:
-                # For non-Windows systems, try generic screenshot tools
-                messagebox.showinfo("Screenshot", "Please take a screenshot and copy it to clipboard, then click OK")
+            elif sys.platform == "darwin":  # macOS
+                subprocess.run(["screencapture", "-i", "-c"])
+            else:  # Linux
+                try:
+                    subprocess.run(["gnome-screenshot", "-a", "-c"])
+                except:
+                    messagebox.showinfo("Screenshot", "Please take a screenshot and copy it to clipboard, then click OK")
             
             # Wait a moment for the screenshot to be taken
-            self.root.after(1000, self.check_clipboard)
+            self.root.after(2000, self.check_clipboard)
             
         except Exception as e:
             messagebox.showerror("Error", f"Could not launch screenshot tool: {e}")
@@ -664,7 +631,7 @@ class WRVUCalculatorGUI:
                 
                 messagebox.showinfo("Success", f"Screenshot captured! ({len(self.captured_images)} total)")
             else:
-                # No image in clipboard, ask user to try again or wait longer
+                # No image in clipboard, ask user to try again
                 result = messagebox.askyesno("No Image", 
                                            "No image found in clipboard. Try again?")
                 if result:
@@ -694,15 +661,15 @@ class WRVUCalculatorGUI:
         """Update status display"""
         total_images = len(self.captured_images) + len(self.selected_files)
         if total_images == 0:
-            self.status_label.config(text="Ready to capture screenshots or add files")
+            self.status_label.config(text="Ready - capture screenshots or add files")
         else:
             captured_text = f"{len(self.captured_images)} screenshots" if self.captured_images else ""
             files_text = f"{len(self.selected_files)} files" if self.selected_files else ""
             
             if captured_text and files_text:
-                status_text = f"Ready to analyze: {captured_text} + {files_text}"
+                status_text = f"Ready to calculate: {captured_text} + {files_text}"
             else:
-                status_text = f"Ready to analyze: {captured_text}{files_text}"
+                status_text = f"Ready to calculate: {captured_text}{files_text}"
             
             self.status_label.config(text=status_text)
     
@@ -717,29 +684,34 @@ class WRVUCalculatorGUI:
         
         self.captured_images = []
         self.selected_files = []
+        self.unmatched_procedures = []
         self.update_status()
-        self.results_label.config(text="No results yet", foreground="black")
+        self.results_label.config(text="No calculations yet", foreground="black")
+        self.unmatched_text.delete(1.0, tk.END)
+        self.email_btn.config(state="disabled")
     
-    def analyze_images(self):
-        """Analyze all captured and selected images"""
+    def calculate_wrvus(self):
+        """Calculate wRVUs for all images"""
         all_images = self.captured_images + self.selected_files
         
         if not all_images:
             messagebox.showwarning("No Images", "Please capture screenshots or add files first.")
             return
         
-        # Start progress bar and run analysis in thread
+        # Start progress bar and run calculation in thread
         self.progress.start()
-        self.analyze_btn.config(state="disabled")
+        self.calculate_btn.config(state="disabled")
         
-        thread = threading.Thread(target=self.analyze_images_thread, args=(all_images,))
+        thread = threading.Thread(target=self.calculate_thread, args=(all_images,))
         thread.daemon = True
         thread.start()
     
-    def analyze_images_thread(self, image_paths):
-        """Analyze images in background thread"""
+    def calculate_thread(self, image_paths):
+        """Calculate wRVUs in background thread"""
         try:
             all_procedures = []
+            all_unmatched = []
+            all_generic = []
             
             for image_path in image_paths:
                 if not os.path.exists(image_path):
@@ -756,36 +728,36 @@ class WRVUCalculatorGUI:
                     procedure_lines = self.calculator.reconstruct_procedure_lines(text)
                     
                     # Find procedures
-                    procedures = self.calculator.find_procedures_in_reconstructed_text(
+                    procedures, unmatched, generic = self.calculator.find_procedures_in_reconstructed_text(
                         procedure_lines, os.path.basename(image_path))
                     
                     all_procedures.extend(procedures)
+                    all_unmatched.extend(unmatched)
+                    all_generic.extend(generic)
                     
                 except Exception as e:
                     # Skip failed images silently for clean output
                     continue
             
             if not all_procedures:
-                self.update_gui_results("No procedures found", 0, 0.0, True)
+                self.update_gui_results("No procedures found", 0, 0.0, [], True)
                 return
             
             # Calculate results
             calc_results, total_exams, total_wrvus, generic_count = self.calculator.calculate_wrvus(all_procedures)
             
-            # Update GUI with simple results
-            results_text = f"{total_exams} Exams | {total_wrvus:.1f} wRVUs"
-            has_generic = generic_count > 0
-            
-            self.update_gui_results(results_text, total_exams, total_wrvus, has_generic)
+            # Update GUI with results
+            self.update_gui_results(f"{total_exams} Exams | {total_wrvus:.1f} wRVUs", 
+                                   total_exams, total_wrvus, all_unmatched, generic_count > 0)
             
         except Exception as e:
-            self.update_gui_results(f"Error: {str(e)}", 0, 0.0, True)
+            self.update_gui_results(f"Error: {str(e)}", 0, 0.0, [], True)
     
-    def update_gui_results(self, results_text, total_exams, total_wrvus, has_issues):
+    def update_gui_results(self, results_text, total_exams, total_wrvus, unmatched_list, has_issues):
         """Update GUI with results (called from background thread)"""
         def update():
             self.progress.stop()
-            self.analyze_btn.config(state="normal")
+            self.calculate_btn.config(state="normal")
             self.results_label.config(text=results_text)
             
             # Color code results
@@ -796,9 +768,94 @@ class WRVUCalculatorGUI:
                     self.results_label.config(foreground="green")
             else:
                 self.results_label.config(foreground="red")
+            
+            # Update unmatched procedures display
+            self.unmatched_text.delete(1.0, tk.END)
+            if unmatched_list:
+                self.unmatched_procedures = unmatched_list
+                unmatched_text = "\n".join(unmatched_list)
+                self.unmatched_text.insert(1.0, unmatched_text)
+                self.email_btn.config(state="normal")
+            else:
+                self.unmatched_text.insert(1.0, "No unmatched procedures - all procedures were recognized!")
+                self.email_btn.config(state="disabled")
         
         # Schedule GUI update in main thread
         self.root.after(0, update)
+    
+    def email_unmatched(self):
+        """Create simple email for busy radiologists"""
+        if not self.unmatched_procedures:
+            return
+        
+        # Developer email address
+        dev_email = "anonraddev@gmail.com"
+        
+        subject = f"wRVU Calculator - {len(self.unmatched_procedures)} Missing Procedures"
+        
+        body = f"""Hi,
+
+The wRVU Calculator couldn't recognize {len(self.unmatched_procedures)} procedures from my PACS screenshots.
+
+MISSING PROCEDURES:
+"""
+        
+        for i, proc in enumerate(self.unmatched_procedures, 1):
+            body += f"{i}. {proc}\n"
+        
+        body += f"""
+Total: {len(self.unmatched_procedures)} procedures
+Date: {datetime.now().strftime('%Y-%m-%d')}
+
+Please add these to the database when you get a chance.
+
+Thanks!
+(Sent from wRVU Calculator)
+"""
+        
+        mailto_url = f"mailto:{dev_email}?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
+        
+        try:
+            webbrowser.open(mailto_url)
+            # Show simple confirmation
+            messagebox.showinfo("Email Ready", 
+                              "Your email is ready to send!\n\n" +
+                              "Just click 'Send' in your email program.")
+        except Exception as e:
+            # Hospital systems might block webbrowser, so show fallback
+            self.show_copy_paste_option(dev_email, subject, body)
+
+    def show_copy_paste_option(self, email, subject, body):
+        """Fallback for locked-down hospital systems"""
+        email_window = tk.Toplevel(self.root)
+        email_window.title("Email Information")
+        email_window.geometry("500x400")
+        
+        ttk.Label(email_window, 
+                 text="Copy this information and send it via email:", 
+                 font=("Arial", 11, "bold")).pack(pady=10)
+        
+        # Email details in a text box
+        email_text = scrolledtext.ScrolledText(email_window, wrap=tk.WORD, height=15)
+        email_text.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 10))
+        
+        full_email = f"To: {email}\nSubject: {subject}\n\n{body}"
+        email_text.insert(1.0, full_email)
+        
+        # Make it easy to select all and copy
+        def select_all():
+            email_text.tag_add(tk.SEL, "1.0", tk.END)
+            email_text.mark_set(tk.INSERT, "1.0")
+            email_text.see(tk.INSERT)
+        
+        button_frame = ttk.Frame(email_window)
+        button_frame.pack(pady=10)
+        
+        ttk.Button(button_frame, text="Select All", command=select_all).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Close", command=email_window.destroy).pack(side=tk.LEFT, padx=5)
+        
+        # Auto-select all text for easy copying
+        email_window.after(100, select_all)
 
 def main():
     root = tk.Tk()
@@ -829,4 +886,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-        

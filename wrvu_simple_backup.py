@@ -25,169 +25,42 @@ class SimpleWRVUCalculator:
         self.setup_generic_values()
         
     def setup_database(self):
-        """Setup 2024 wRVU database with all missing procedures added"""
-        self.procedure_db = {
-            # US procedures
-            "US VENOUS LOWER EXTREMITY DUPLEX BILATERAL": {"cpt": "93971", "wrvu": 0.7},
-            "US VENOUS LOWER EXTREMITY DUPLEX": {"cpt": "93970", "wrvu": 0.45},
-            "VASCULAR VEINS LOWER EXTREMITY DUPLEX": {"cpt": "93970", "wrvu": 0.45},
-            "US RENAL KIDNEY": {"cpt": "76770", "wrvu": 0.58},
-            "US RENAL": {"cpt": "76770", "wrvu": 0.58},
-            "US OB LESS THAN 14 WEEKS": {"cpt": "76815", "wrvu": 0.85},
-            "US OB GREATER THAN 14 WEEKS": {"cpt": "76805", "wrvu": 0.99},
-            "US OB LESS THAN 14 WEEKS TRANSABDOMINAL": {"cpt": "76815", "wrvu": 0.85},
-            "US OB GREATER THAN 14 WEEKS TRANSABDOMINAL": {"cpt": "76805", "wrvu": 0.99},
-            "US OB FOLLOW UP PER FETUS": {"cpt": "76815", "wrvu": 0.85},
-            "US NON OB TRANSVAGINAL": {"cpt": "76830", "wrvu": 0.69},
-            "US OB TRANSVAGINAL": {"cpt": "76830", "wrvu": 0.69},
-            "US PARACENTESIS": {"cpt": "76942", "wrvu": 0.67},
-            "US BIOPSY": {"cpt": "76942", "wrvu": 0.67},
-            "US LEG RT VENOUS": {"cpt": "93970", "wrvu": 0.45},
-            "US LEG LT VENOUS": {"cpt": "93970", "wrvu": 0.45},
-            "US ABDOMEN LIMITED": {"cpt": "76705", "wrvu": 0.59},
-            "US LIMITED ABDOMEN": {"cpt": "76705", "wrvu": 0.59},
-            "US COMPLETE ABDOMEN": {"cpt": "76700", "wrvu": 0.81},
-            "US THYROID PARATHYROID NECK": {"cpt": "76536", "wrvu": 0.56},
-            "US SCROTUM AND TESTICLES": {"cpt": "76870", "wrvu": 0.64},
-            "US RETROPERITONEAL LIMITED": {"cpt": "76770", "wrvu": 0.58},
-            "US RETROPERITONEAL COMPLETE": {"cpt": "76770", "wrvu": 0.58},
-            "US PELVIS COMPLETE": {"cpt": "76856", "wrvu": 0.69},
-            "US PELVIS COMPLETE AND US NON OB TRANSVAGINAL": {"cpt": "76856", "wrvu": 0.69},
-            "US BREAST BILATERAL LIMITED": {"cpt": "76641", "wrvu": 0.69},
+        """Load procedure database from CSV file"""
+        self.procedure_db = {}
+        
+        try:
+            import csv
+            csv_file = "procedure_database.csv"
             
-            # CT procedures
-            "CT ENTEROGRAPHY ABDOMEN AND PELVIS WITH CONTRAST": {"cpt": "74177", "wrvu": 1.82},
-            "CT ABDOMEN PELVIS WITH AND WITHOUT CONTRAST": {"cpt": "74178", "wrvu": 2.01},
-            "CT ABDOMEN PELVIS WITH CONTRAST": {"cpt": "74177", "wrvu": 1.82},
-            "CT ABDOMEN PELVIS WITHOUT CONTRAST": {"cpt": "74176", "wrvu": 1.74},
-            "CT PELVIS WITHOUT CONTRAST": {"cpt": "72192", "wrvu": 1.19},
-            "CT CHEST WITH CONTRAST": {"cpt": "71260", "wrvu": 1.24},
-            "CT CHEST WITHOUT CONTRAST": {"cpt": "71250", "wrvu": 1.02},
-            "CT CHEST HIGH RESOLUTION": {"cpt": "71250", "wrvu": 1.02},
-            "CT ANGIOGRAM CHEST PULMONARY EMBOLISM": {"cpt": "71275", "wrvu": 1.82},
-            "CT ANGIOGRAM CHEST ABDOMEN PELVIS": {"cpt": "74174", "wrvu": 2.2},
-            "CT ANGIOGRAM CHEST WITH AND OR WITHOUT CONTRAST": {"cpt": "71275", "wrvu": 1.82},
-            "CT ANGIOGRAM ABDOMINAL AORTA AND BILATERAL ILIOFEM": {"cpt": "74175", "wrvu": 1.82},
-            "CT ANGIOGRAM ABDOMEN WITH AND OR WITHOUT CONTRAST": {"cpt": "74174", "wrvu": 1.82},
-            "CT ANGIOGRAM HEAD WITH WO CONTRAST ACUTE STROKE": {"cpt": "70496", "wrvu": 1.75},
-            "CT ANGIOGRAM NECK WITH WO CONTRAST ACUTE STROKE": {"cpt": "70498", "wrvu": 1.75},
-            "CT HEAD WITHOUT CONTRAST": {"cpt": "70450", "wrvu": 0.85},
-            "CT HEAD WITHOUT CONTRAST ACUTE STROKE": {"cpt": "70450", "wrvu": 0.85},
-            "CT HEAD WITH AND WITHOUT CONTRAST": {"cpt": "70470", "wrvu": 1.27},
-            "CT LOWER EXTREMITY WITHOUT CONTRAST": {"cpt": "73700", "wrvu": 1.33},
-            "CT LOWER EXTREMITY WITHOUT CONTRAST LEFT": {"cpt": "73700", "wrvu": 1.33},
-            "CT UPPER EXTREMITY WITHOUT CONTRAST": {"cpt": "73200", "wrvu": 1.33},
-            "CT UPPER EXTREMITY WITHOUT CONTRAST RIGHT": {"cpt": "73200", "wrvu": 1.33},
-            "CT HEART CALCIUM SCORE WITHOUT CONTRAST": {"cpt": "75571", "wrvu": 0.58},
-            "CT ORBITS SELLA IAC WITHOUT CONTRAST": {"cpt": "70481", "wrvu": 1.13},
-            "CT ORBITS SELLA OR IAC WITHOUT CONTRAST": {"cpt": "70481", "wrvu": 1.13},
-            "CT MAXILLOFACIAL WITHOUT CONTRAST": {"cpt": "70486", "wrvu": 0.85},
-            "CT LUMBAR SPINE WITHOUT CONTRAST": {"cpt": "72131", "wrvu": 1.0},
-            "CT LUNG SCREEN PROTOCOL LOW DOSE INITIAL BASELINE": {"cpt": "71271", "wrvu": 1.02},
-            "CT C SPINE SPINE WO CON": {"cpt": "72125", "wrvu": 1.0},
-            "CT THORACIC SPINE WITHOUT CONTRAST": {"cpt": "72128", "wrvu": 1.0},
-            "CT SOFT TISSUE NECK WITH CONTRAST": {"cpt": "70491", "wrvu": 1.38},
+            if not os.path.exists(csv_file):
+                print(f"ERROR: {csv_file} not found!")
+                print("Please ensure procedure_database.csv is in the same directory as this script.")
+                sys.exit(1)
             
-            # MRI procedures
-            "MRI ABDOMEN WITH AND WITHOUT CONTRAST": {"cpt": "74183", "wrvu": 2.27},
-            "MRI BRAIN WITH AND WITHOUT CONTRAST": {"cpt": "70554", "wrvu": 2.29},
-            "MRI BRAIN WITHOUT CONTRAST": {"cpt": "70551", "wrvu": 1.48},
-            "MRI LUMBAR SPINE WITHOUT CONTRAST": {"cpt": "72148", "wrvu": 1.48},
-            "MRI LUMBAR SPINE WITH AND WITHOUT CONTRAST": {"cpt": "72158", "wrvu": 2.29},
-            "MRI CERVICAL SPINE WITH AND WITHOUT CONTRAST": {"cpt": "72156", "wrvu": 2.29},
-            "MRI CERVICAL SPINE WITHOUT CONTRAST": {"cpt": "72141", "wrvu": 1.48},
-            "MRI THORACIC SPINE WITH AND WITHOUT CONTRAST": {"cpt": "72157", "wrvu": 2.29},
-            "MRI PELVIS WITHOUT CONTRAST": {"cpt": "72195", "wrvu": 1.46},
-            "MRI ANGIOGRAM HEAD WITH AND WITHOUT CONTRAST": {"cpt": "70544", "wrvu": 1.48},
-            "MRI HIP WITH AND WITHOUT CONTRAST RIGHT": {"cpt": "73722", "wrvu": 2.29},
-            "MRI HIP WITH AND WITHOUT CONTRAST LEFT": {"cpt": "73722", "wrvu": 2.29},
-            "MRI BREAST WITH AND WITHOUT CONTRAST BILATERAL": {"cpt": "77059", "wrvu": 2.4},
-            "MRI SHOULDER WITH AND WITHOUT CONTRAST LEFT": {"cpt": "73223", "wrvu": 2.29},
-            "MRI MRCP WITH AND WITHOUT CONTRAST": {"cpt": "74183", "wrvu": 2.27},
-            "MRI ANKLE WITHOUT CONTRAST RIGHT": {"cpt": "73721", "wrvu": 1.48},
+            with open(csv_file, 'r', newline='', encoding='utf-8') as file:
+                reader = csv.DictReader(file)
+                for row in reader:
+                    # Handle potential column name variations
+                    name = row.get('name') or row.get('procedure_name') or row.get('Procedure Name')
+                    cpt = row.get('cpt') or row.get('CPT') or row.get('cpt_code') or row.get('CPT Code')
+                    wrvu = row.get('wrvu') or row.get('WRVU') or row.get('wRVU') or row.get('wRVU Value')                    
+                    if name and cpt and wrvu:
+                        self.procedure_db[name.upper().strip()] = {
+                            "cpt": str(cpt).strip(),
+                            "wrvu": float(wrvu)
+                        }
             
-            # X-ray procedures
-            "XR ANKLE MINIMUM 3 VIEWS": {"cpt": "73610", "wrvu": 0.22},
-            "XR ANKLE MINIMUM 3 VIEWS RIGHT": {"cpt": "73610", "wrvu": 0.22},
-            "XR ANKLE MINIMUM 3 VIEWS LEFT": {"cpt": "73610", "wrvu": 0.22},
-            "XR HIP 2 OR 3 VIEWS WITH OR WITHOUT PELVIS": {"cpt": "73521", "wrvu": 0.22},
-            "XR HIP 2 OR 3 VIEWS RIGHT WITH OR WITHOUT PELVIS": {"cpt": "73521", "wrvu": 0.22},
-            "XR HIP 2 VIEWS BILATERAL WITH OR WITHOUT PELVIS": {"cpt": "73521", "wrvu": 0.22},
-            "XR CHEST 1 VIEW": {"cpt": "71045", "wrvu": 0.18},
-            "XR CHEST 2 VIEWS": {"cpt": "71046", "wrvu": 0.22},
-            "XR ABDOMEN 1 VIEW": {"cpt": "74018", "wrvu": 0.18},
-            "XR ABDOMEN 2 VIEWS": {"cpt": "74019", "wrvu": 0.23},
-            "XR ABDOMEN 2 VIEWS COMPLETE": {"cpt": "74019", "wrvu": 0.23},
-            "XR LUMBAR SPINE 1 VIEW": {"cpt": "72100", "wrvu": 0.22},
-            "XR LUMBAR SPINE 2 OR 3 VIEWS": {"cpt": "72100", "wrvu": 0.22},
-            "XR LUMBAR SPINE MINIMUM 4 VIEWS": {"cpt": "72100", "wrvu": 0.22},
-            "XR CERVICAL SPINE 1 VIEW": {"cpt": "72040", "wrvu": 0.22},
-            "XR CERVICAL SPINE FLEXION AND EXTENSION VIEW ONLY": {"cpt": "72040", "wrvu": 0.22},
-            "XR C-SPINE 2 OR 3 VIEWS": {"cpt": "72040", "wrvu": 0.22},
-            "XR THORACIC SPINE 2 VIEWS": {"cpt": "72070", "wrvu": 0.22},
-            "XR SHOULDER MINIMUM 2 VIEWS": {"cpt": "73030", "wrvu": 0.22},
-            "XR SHOULDER MINIMUM 2 VIEWS RIGHT": {"cpt": "73030", "wrvu": 0.22},
-            "XR SHOULDER MINIMUM 2 VIEWS LEFT": {"cpt": "73030", "wrvu": 0.22},
-            "XR KNEE MINIMUM 2 VIEWS": {"cpt": "73560", "wrvu": 0.22},
-            "XR KNEE 2 VIEWS LEFT": {"cpt": "73560", "wrvu": 0.22},
-            "XR KNEE 2 VIEWS RIGHT": {"cpt": "73560", "wrvu": 0.22},
-            "XR KNEE 3 VIEWS RIGHT": {"cpt": "73560", "wrvu": 0.22},
-            "XR KNEE MINIMUM 4 VIEWS RIGHT": {"cpt": "73560", "wrvu": 0.22},
-            "XR FOOT MINIMUM 3 VIEWS LEFT": {"cpt": "73620", "wrvu": 0.22},
-            "XR FOOT MINIMUM 3 VIEWS RIGHT": {"cpt": "73620", "wrvu": 0.22},
-            "XR FOOT 2 VIEWS LEFT": {"cpt": "73620", "wrvu": 0.22},
-            "XR FOOT 2 VIEWS RIGHT": {"cpt": "73620", "wrvu": 0.22},
-            "XR ELBOW MINIMUM 3 VIEWS LEFT": {"cpt": "73070", "wrvu": 0.22},
-            "XR ELBOW MINIMUM 3 VIEWS RIGHT": {"cpt": "73070", "wrvu": 0.22},
-            "XR ELBOW 2 VIEWS RIGHT": {"cpt": "73070", "wrvu": 0.22},
-            "XR ELBOW 2 VIEWS LEFT": {"cpt": "73070", "wrvu": 0.22},
-            "XR PELVIS 1 OR 2 VIEWS": {"cpt": "72170", "wrvu": 0.22},
-            "XR FACIAL BONES 3 OR MORE VIEWS": {"cpt": "70140", "wrvu": 0.22},
-            "XR RIBS UNILAT LEFT AND PA CHEST MIN 3 VIEWS": {"cpt": "71100", "wrvu": 0.22},
-            "XR FEMUR 2 OR MORE VIEWS LEFT": {"cpt": "73550", "wrvu": 0.22},
-            "XR TOE 1ST LEFT": {"cpt": "73660", "wrvu": 0.22},
-            "XR HAND MINIMUM 3 VIEWS RIGHT": {"cpt": "73120", "wrvu": 0.22},
-            "XR FOREARM 2 VIEWS RIGHT": {"cpt": "73090", "wrvu": 0.22},
-            "XR WRIST MINIMUM 3 VIEWS LEFT": {"cpt": "73110", "wrvu": 0.22},
-            "XR WRIST MINIMUM 3 VIEWS RIGHT": {"cpt": "73110", "wrvu": 0.22},
+            if len(self.procedure_db) == 0:
+                print("ERROR: No valid procedures found in CSV file!")
+                print("Please check the CSV format and column names.")
+                sys.exit(1)
             
-            # PET procedures
-            "PET CT SKULL BASE TO MID THIGH INIT": {"cpt": "78815", "wrvu": 4.8},
-            "PET CT SKULL BASE TO MID THIGH SUBSEQUENT": {"cpt": "78815", "wrvu": 4.8},
-            
-            # Fluoroscopy procedures
-            "FL GUIDANCE VENOUS ACCESS": {"cpt": "77001", "wrvu": 0.25},
-            "FL ESOPHAGRAM COMPLETE": {"cpt": "74220", "wrvu": 0.85},
-            "FL ESOPHAGRAM SINGLE CONTRAST": {"cpt": "74220", "wrvu": 0.85},
-            "FL UPPER GI WITH SMALL BOWEL FOLLOW THROUGH": {"cpt": "74245", "wrvu": 1.25},
-            "FL RETROGRADE PYELOGRAM WITH AND WITHOUT KUB": {"cpt": "74420", "wrvu": 1.0},
-            "FL SWALLOW STUDY FOR SPEECH": {"cpt": "74230", "wrvu": 0.85},
-            "FLUORO GUIDANCE VENOUS ACCESS": {"cpt": "77001", "wrvu": 0.25},
-            "FLUORO ESOPHAGRAM COMPLETE": {"cpt": "74220", "wrvu": 0.85},
-            "FLUOROSCOPY GUIDED SPINAL INJECTION": {"cpt": "77003", "wrvu": 0.67},
-            
-            # Nuclear Medicine procedures
-            "NM BONE SCAN 3 PHASE": {"cpt": "78320", "wrvu": 0.96},
-            "NM LUNG SCAN VENTILATION AND PERFUSION IMAGING": {"cpt": "78588", "wrvu": 1.4},
-            "NM LIVER SCAN STATIC ONLY": {"cpt": "78215", "wrvu": 0.74},
-            "NM GASTRIC EMPTYING STUDY": {"cpt": "78264", "wrvu": 1.0},
-            "NM HIDA SCAN": {"cpt": "78226", "wrvu": 0.96},
-            
-            # Interventional Radiology procedures
-            "IR EMBOLIZATION ARTERIAL": {"cpt": "37204", "wrvu": 3.2},
-            "IR KYPHOPLASTY LUMBAR": {"cpt": "22523", "wrvu": 2.8},
-            
-            # Procedures
-            "THORACENTESIS": {"cpt": "32554", "wrvu": 1.2},
-            "PARACENTESIS": {"cpt": "49082", "wrvu": 1.0},
-            
-            # Bone density procedures
-            "DXA BONE DENSITY SPINE AND HIP": {"cpt": "77080", "wrvu": 0.17},
-            
-            # Mammography procedures
-            "MAMMO DIGITAL 3D SCREENING BILATERAL": {"cpt": "77067", "wrvu": 0.7},
-            "MAMMO DIGITAL 3D DIAGNOSTIC UNILATERAL LEFT": {"cpt": "77066", "wrvu": 0.7},
-        }
+            print(f"Loaded {len(self.procedure_db)} procedures from {csv_file}")
+                
+        except Exception as e:
+            print(f"ERROR loading CSV database: {e}")
+            print("Please check that procedure_database.csv exists and is properly formatted.")
+            sys.exit(1)
     
     def setup_generic_values(self):
         """Generic wRVU values by modality"""
