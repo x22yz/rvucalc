@@ -464,11 +464,11 @@ class WRVUCalculatorGUI:
         buttons_frame = ttk.Frame(main_frame)
         buttons_frame.pack(pady=(0, 20))
         
-        # Screenshot instructions
-        screenshot_label = ttk.Label(buttons_frame, 
-                                       text="📷 Windows + Shift + S → Select area → Save as file → Add Files",
-                                       font=("Arial", 9))
-        screenshot_label.pack(side=tk.LEFT, padx=(0, 15))
+        # Screenshot capture button
+        self.screenshot_btn = ttk.Button(buttons_frame, text="Take Screenshot", 
+                                        command=self.capture_screenshot,
+                                        width=15)
+        self.screenshot_btn.pack(side=tk.LEFT, padx=(0, 10))
         
         # Add files button
         self.add_files_btn = ttk.Button(buttons_frame, text="Add Files", 
@@ -522,6 +522,52 @@ class WRVUCalculatorGUI:
         # Progress bar
         self.progress = ttk.Progressbar(main_frame, mode='indeterminate')
         self.progress.pack(fill=tk.X, pady=(10, 0))
+
+    def capture_screenshot(self):
+        """Capture screenshot using Windows snipping tool"""
+        try:
+            import pyautogui
+            
+            # Brief instruction
+            messagebox.showinfo("Screenshot", "Screen will dim - select area to capture.\nScreenshot will be added automatically when done!")
+            
+            # Minimize our window so it doesn't interfere
+            self.root.iconify()
+            
+            # Wait a moment then trigger Windows + Shift + S
+            time.sleep(0.5)
+            pyautogui.hotkey('win', 'shift', 's')
+            
+            # Wait longer for user to take screenshot, then restore window and check clipboard
+            self.root.after(4000, self.finish_screenshot)
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Screenshot failed: {e}")
+            self.root.deiconify()
+
+    def finish_screenshot(self):
+        """Restore window and check for screenshot in clipboard"""
+        self.root.deiconify()  # Restore window
+        self.check_clipboard()
+
+    def check_clipboard(self):
+        """Check if there's an image in clipboard and save it"""
+        try:
+            img = ImageGrab.grabclipboard()
+            if img:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"screenshot_{timestamp}.png"
+                filepath = os.path.join(self.temp_dir, filename)
+                img.save(filepath)
+                self.captured_images.append(filepath)
+                self.update_status()
+                messagebox.showinfo("Success", f"Screenshot captured and added automatically!")
+            else:
+                # If no image found, wait a bit longer and try again
+                messagebox.showinfo("Waiting", "Waiting for screenshot... Please complete your selection.")
+                self.root.after(2000, self.check_clipboard)
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not capture screenshot: {e}")
     
     def add_files(self):
         """Add image files manually"""
